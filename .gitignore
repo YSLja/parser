@@ -1,0 +1,31 @@
+# Solution / reference implementation (do not share)
+.solution/
+
+# Compiled class files
+bin/
+*.class
+
+# Build outputs
+*.jar
+!lib/*.jar
+
+# ANTLR generated (optional; remove if you need to track these)
+# Parse/antlr_build/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs and temp
+*.log
+*.tmp
+*.swp
+*~
