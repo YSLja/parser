@@ -37,15 +37,6 @@ public class ASTBuilder extends gParserBaseVisitor<Absyn> {
       return decls;
    }
 
-   @Override
-   public Absyn visit__(gParser.__Context ctx) {
-      return IfStmt(
-            0,
-            visit(ctx.expr()),
-            visit(ctx.statement()),
-            new EmptyStmt(0)
-      );
-   }
 
 }
 
