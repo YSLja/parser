@@ -53,12 +53,19 @@ public class ASTBuilder extends gParserBaseVisitor<Absyn> {
    @Override
    public Absyn visitType(gParser.TypeContext ctx) {
       boolean constant = ctx.CONST() != null;
-      String name = getTypeName(ctx.type_name());
+      TypeName tn = (TypeName) visit(ctx.type_name());
+      String name = tn.name;
       int pointerCount = ctx.STAR() != null ? ctx.STAR().size() : 0;
       DeclList brackets = ctx.brackets_list() != null
          ? (DeclList) visit(ctx.brackets_list())
          : new DeclList(0);
       return new Type(ctx.getStart().getLine(), constant, name, pointerCount, brackets);
+   }
+
+   @Override
+   public Absyn visitType_name(gParser.Type_nameContext ctx) {
+      String name = getTypeName(ctx);
+      return new TypeName(ctx.getStart().getLine(), name);
    }
 
    private String getTypeName(gParser.Type_nameContext ctx) {
