@@ -30,6 +30,7 @@ public class ASTBuilder extends gParserBaseVisitor<Absyn> {
 
    @Override
    public Absyn visitProgram(gParser.ProgramContext ctx) {
+      // program : declaration* EOF
       DeclList decls = new DeclList(0);
       for (gParser.DeclarationContext dctx : ctx.declaration()) {
         decls.list.add((Decl)visit(dctx));
@@ -39,8 +40,10 @@ public class ASTBuilder extends gParserBaseVisitor<Absyn> {
 
    @Override
    public Absyn visitVarDecl(gParser.VarDeclContext ctx) {
+      // VAR type ID initialization SEMICOLON
       Type t = (Type) visit(ctx.type());
       String name = ctx.ID().getText();
+      // Optional initializer: ASSIGN initializer or empty
       Exp init;
       if (ctx.initialization().ASSIGN() != null) {
          init = (Exp) visit(ctx.initialization().initializer());
@@ -52,10 +55,12 @@ public class ASTBuilder extends gParserBaseVisitor<Absyn> {
 
    @Override
    public Absyn visitType(gParser.TypeContext ctx) {
+      // CONST? type_name STAR* brackets_list?
       boolean constant = ctx.CONST() != null;
       TypeName tn = (TypeName) visit(ctx.type_name());
       String name = tn.name;
       int pointerCount = ctx.STAR() != null ? ctx.STAR().size() : 0;
+      // Array dimensions (optional)
       DeclList brackets = ctx.brackets_list() != null
          ? (DeclList) visit(ctx.brackets_list())
          : new DeclList(0);
@@ -64,6 +69,7 @@ public class ASTBuilder extends gParserBaseVisitor<Absyn> {
 
    @Override
    public Absyn visitType_name(gParser.Type_nameContext ctx) {
+      // type_name : VOID | INT | STRING | ID
       String name = getTypeName(ctx);
       return new TypeName(ctx.getStart().getLine(), name);
    }
@@ -78,6 +84,7 @@ public class ASTBuilder extends gParserBaseVisitor<Absyn> {
 
    @Override
    public Absyn visitEmptyArrayBrackets(gParser.EmptyArrayBracketsContext ctx) {
+      // brackets_list : (LSQUARE RSQUARE)+
       DeclList list = new DeclList(ctx.getStart().getLine());
       int n = ctx.LSQUARE().size();
       for (int i = 0; i < n; i++) {
@@ -88,6 +95,7 @@ public class ASTBuilder extends gParserBaseVisitor<Absyn> {
 
    @Override
    public Absyn visitExprArrayBrackets(gParser.ExprArrayBracketsContext ctx) {
+      // brackets_list : (LSQUARE expr RSQUARE)+
       DeclList list = new DeclList(ctx.getStart().getLine());
       for (int i = 0; i < ctx.expr().size(); i++) {
          list.list.add(new ArrayType(ctx.getStart().getLine(), (Exp) visit(ctx.expr(i))));
@@ -97,9 +105,11 @@ public class ASTBuilder extends gParserBaseVisitor<Absyn> {
 
    @Override
    public Absyn visitInitializer(gParser.InitializerContext ctx) {
+      // initializer : expr | LCURLY initializer (COMMA initializer)* RCURLY
       if (ctx.expr() != null) {
          return (Exp) visit(ctx.expr());
       }
+      // Aggregate initializer: list of expressions
       ExpList list = new ExpList(ctx.getStart().getLine());
       for (gParser.InitializerContext ic : ctx.initializer()) {
          list.list.add((Exp) visit(ic));
@@ -109,19 +119,23 @@ public class ASTBuilder extends gParserBaseVisitor<Absyn> {
 
    @Override
    public Absyn visitDecLit(gParser.DecLitContext ctx) {
+      // expr : DECIMAL_LITERAL
       int value = Integer.parseInt(ctx.DECIMAL_LITERAL().getText());
       return new DecLit(ctx.getStart().getLine(), value);
    }
 
    @Override
    public Absyn visitID(gParser.IDContext ctx) {
+      // expr : ID
       return new ID(ctx.getStart().getLine(), ctx.ID().getText());
    }
 
    @Override
    public Absyn visitFunDecl(gParser.FunDeclContext ctx) {
+      // FUN type ID LPAREN parameters? RPAREN statement
       Type returnType = (Type) visit(ctx.type());
       String name = ctx.ID().getText();
+      // Parameter list (may be empty)
       DeclList params = ctx.parameters() != null
          ? (DeclList) visit(ctx.parameters())
          : new DeclList(ctx.getStart().getLine());
@@ -131,6 +145,7 @@ public class ASTBuilder extends gParserBaseVisitor<Absyn> {
 
    @Override
    public Absyn visitParameters(gParser.ParametersContext ctx) {
+      // parameters : type ID (COMMA type ID)*
       DeclList list = new DeclList(ctx.getStart().getLine());
       for (int i = 0; i < ctx.type().size(); i++) {
          Type t = (Type) visit(ctx.type(i));
@@ -142,6 +157,7 @@ public class ASTBuilder extends gParserBaseVisitor<Absyn> {
 
    @Override
    public Absyn visitTypedefDecl(gParser.TypedefDeclContext ctx) {
+      // TYPEDEF type ID SEMICOLON
       Type t = (Type) visit(ctx.type());
       String name = ctx.ID().getText();
       return new Typedef(ctx.getStart().getLine(), t, name);
@@ -149,6 +165,7 @@ public class ASTBuilder extends gParserBaseVisitor<Absyn> {
 
    @Override
    public Absyn visitStructOrUnionDecl(gParser.StructOrUnionDeclContext ctx) {
+      // (STRUCT | UNION) ID LCURLY (type ID SEMICOLON)+ RCURLY
       String name = ctx.ID(0).getText();
       DeclList body = new DeclList(ctx.getStart().getLine());
       for (int i = 0; i < ctx.type().size(); i++) {
@@ -169,6 +186,7 @@ public class ASTBuilder extends gParserBaseVisitor<Absyn> {
 
    @Override
    public Absyn visitCompStmt(gParser.CompStmtContext ctx) {
+      // LCURLY declaration* statement* RCURLY
       DeclList declList = new DeclList(ctx.getStart().getLine());
       for (gParser.DeclarationContext dctx : ctx.declaration()) {
          declList.list.add((Decl) visit(dctx));
@@ -182,13 +200,16 @@ public class ASTBuilder extends gParserBaseVisitor<Absyn> {
 
    @Override
    public Absyn visitIfStmt(gParser.IfStmtContext ctx) {
+      // IF LPAREN expr RPAREN statement (no else)
       Exp cond = (Exp) visit(ctx.expr());
       Stmt thenStmt = (Stmt) visit(ctx.statement());
+      // No else branch: use EmptyStmt
       return new IfStmt(ctx.getStart().getLine(), cond, thenStmt, new EmptyStmt(ctx.getStart().getLine()));
    }
 
    @Override
    public Absyn visitIfElseStmt(gParser.IfElseStmtContext ctx) {
+      // IF LPAREN expr RPAREN statement ELSE statement
       Exp cond = (Exp) visit(ctx.expr());
       Stmt thenStmt = (Stmt) visit(ctx.statement(0));
       Stmt elseStmt = (Stmt) visit(ctx.statement(1));
@@ -197,6 +218,7 @@ public class ASTBuilder extends gParserBaseVisitor<Absyn> {
 
    @Override
    public Absyn visitWhileStmt(gParser.WhileStmtContext ctx) {
+      // WHILE LPAREN expr RPAREN statement
       Exp cond = (Exp) visit(ctx.expr());
       Stmt body = (Stmt) visit(ctx.statement());
       return new WhileStmt(ctx.getStart().getLine(), cond, body);
@@ -204,18 +226,21 @@ public class ASTBuilder extends gParserBaseVisitor<Absyn> {
 
    @Override
    public Absyn visitExprStmt(gParser.ExprStmtContext ctx) {
+      // expr SEMICOLON
       Exp e = (Exp) visit(ctx.expr());
       return new ExprStmt(ctx.getStart().getLine(), e);
    }
 
    @Override
    public Absyn visitReturnStmt(gParser.ReturnStmtContext ctx) {
+      // RETURN initializer SEMICOLON
       Exp value = (Exp) visit(ctx.initializer());
       return new ReturnStmt(ctx.getStart().getLine(), value);
    }
 
    @Override
    public Absyn visitBreakStmt(gParser.BreakStmtContext ctx) {
+      // BREAK SEMICOLON
       return new BreakStmt(ctx.getStart().getLine());
    }
 
