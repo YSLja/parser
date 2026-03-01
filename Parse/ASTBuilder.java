@@ -111,5 +111,79 @@ public class ASTBuilder extends gParserBaseVisitor<Absyn> {
       return new ID(ctx.getStart().getLine(), ctx.ID().getText());
    }
 
+   @Override
+   public Absyn visitFunDecl(gParser.FunDeclContext ctx) {
+      Type returnType = (Type) visit(ctx.type());
+      String name = ctx.ID().getText();
+      DeclList params = ctx.parameters() != null
+         ? (DeclList) visit(ctx.parameters())
+         : new DeclList(ctx.getStart().getLine());
+      Stmt body = (Stmt) visit(ctx.statement());
+      return new FunDecl(ctx.getStart().getLine(), returnType, name, params, body);
+   }
+
+   @Override
+   public Absyn visitParameters(gParser.ParametersContext ctx) {
+      DeclList list = new DeclList(ctx.getStart().getLine());
+      for (int i = 0; i < ctx.type().size(); i++) {
+         Type t = (Type) visit(ctx.type(i));
+         String paramName = ctx.ID(i).getText();
+         list.list.add(new Parameter(ctx.getStart().getLine(), t, paramName));
+      }
+      return list;
+   }
+
+   @Override
+   public Absyn visitCompStmt(gParser.CompStmtContext ctx) {
+      DeclList declList = new DeclList(ctx.getStart().getLine());
+      for (gParser.DeclarationContext dctx : ctx.declaration()) {
+         declList.list.add((Decl) visit(dctx));
+      }
+      StmtList stmtList = new StmtList(ctx.getStart().getLine());
+      for (gParser.StatementContext sctx : ctx.statement()) {
+         stmtList.list.add((Stmt) visit(sctx));
+      }
+      return new CompStmt(ctx.getStart().getLine(), declList, stmtList);
+   }
+
+   @Override
+   public Absyn visitIfStmt(gParser.IfStmtContext ctx) {
+      Exp cond = (Exp) visit(ctx.expr());
+      Stmt thenStmt = (Stmt) visit(ctx.statement());
+      return new IfStmt(ctx.getStart().getLine(), cond, thenStmt, new EmptyStmt(ctx.getStart().getLine()));
+   }
+
+   @Override
+   public Absyn visitIfElseStmt(gParser.IfElseStmtContext ctx) {
+      Exp cond = (Exp) visit(ctx.expr());
+      Stmt thenStmt = (Stmt) visit(ctx.statement(0));
+      Stmt elseStmt = (Stmt) visit(ctx.statement(1));
+      return new IfStmt(ctx.getStart().getLine(), cond, thenStmt, elseStmt);
+   }
+
+   @Override
+   public Absyn visitWhileStmt(gParser.WhileStmtContext ctx) {
+      Exp cond = (Exp) visit(ctx.expr());
+      Stmt body = (Stmt) visit(ctx.statement());
+      return new WhileStmt(ctx.getStart().getLine(), cond, body);
+   }
+
+   @Override
+   public Absyn visitExprStmt(gParser.ExprStmtContext ctx) {
+      Exp e = (Exp) visit(ctx.expr());
+      return new ExprStmt(ctx.getStart().getLine(), e);
+   }
+
+   @Override
+   public Absyn visitReturnStmt(gParser.ReturnStmtContext ctx) {
+      Exp value = (Exp) visit(ctx.initializer());
+      return new ReturnStmt(ctx.getStart().getLine(), value);
+   }
+
+   @Override
+   public Absyn visitBreakStmt(gParser.BreakStmtContext ctx) {
+      return new BreakStmt(ctx.getStart().getLine());
+   }
+
 }
 
