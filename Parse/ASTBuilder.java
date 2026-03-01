@@ -141,6 +141,26 @@ public class ASTBuilder extends gParserBaseVisitor<Absyn> {
    }
 
    @Override
+   public Absyn visitStructOrUnionDecl(gParser.StructOrUnionDeclContext ctx) {
+      String name = ctx.ID(0).getText();
+      DeclList body = new DeclList(ctx.getStart().getLine());
+      for (int i = 0; i < ctx.type().size(); i++) {
+         Type t = (Type) visit(ctx.type(i));
+         String memberName = ctx.ID(i + 1).getText();
+         if (ctx.STRUCT() != null) {
+            body.list.add(new StructMember(ctx.getStart().getLine(), t, memberName));
+         } else {
+            body.list.add(new UnionMember(ctx.getStart().getLine(), t, memberName));
+         }
+      }
+      if (ctx.STRUCT() != null) {
+         return new StructDecl(ctx.getStart().getLine(), name, body);
+      } else {
+         return new UnionDecl(ctx.getStart().getLine(), name, body);
+      }
+   }
+
+   @Override
    public Absyn visitCompStmt(gParser.CompStmtContext ctx) {
       DeclList declList = new DeclList(ctx.getStart().getLine());
       for (gParser.DeclarationContext dctx : ctx.declaration()) {
