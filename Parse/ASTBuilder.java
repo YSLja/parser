@@ -134,6 +134,13 @@ public class ASTBuilder extends gParserBaseVisitor<Absyn> {
    }
 
    @Override
+   public Absyn visitTypedefDecl(gParser.TypedefDeclContext ctx) {
+      Type t = (Type) visit(ctx.type());
+      String name = ctx.ID().getText();
+      return new Typedef(ctx.getStart().getLine(), t, name);
+   }
+
+   @Override
    public Absyn visitCompStmt(gParser.CompStmtContext ctx) {
       DeclList declList = new DeclList(ctx.getStart().getLine());
       for (gParser.DeclarationContext dctx : ctx.declaration()) {
