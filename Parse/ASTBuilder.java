@@ -120,7 +120,7 @@ public class ASTBuilder extends gParserBaseVisitor<Absyn> {
    @Override
    public Absyn visitDecLit(gParser.DecLitContext ctx) {
       // expr : DECIMAL_LITERAL
-      int value = Integer.parseInt(ctx.DECIMAL_LITERAL().getText());
+      int value = Integer.decode(ctx.DECIMAL_LITERAL().getText());
       return new DecLit(ctx.getStart().getLine(), value);
    }
 
@@ -245,19 +245,57 @@ public class ASTBuilder extends gParserBaseVisitor<Absyn> {
    }
 
    @Override
-   public Absyn visitUnary_operator(gParser.Unary_operatorContext ctx) {
-      // unary_operator : BITWISEAND | STAR | ADD | NOT
-      String op;
-      if (ctx.BITWISEAND() != null) {
-         op = "&";
-      } else if (ctx.STAR() != null) {
-         op = "*";
-      } else if (ctx.ADD() != null) {
-         op = "+";
-      } else {
-         op = "!";
-      }
-      return new UnaryOp(ctx.getStart().getLine(), op);
+   public Absyn visitUnaryExp(gParser.UnaryExpContext ctx) {
+   	String op = ctx.unary_operator().getText();
+	Exp operand = (Exp) visit(ctx.expr());
+	return new UnaryExp(ctx.getStart().getLine(), op, operand);
+   }
+
+   @Override
+   public Absyn visitStrLit(gParser.StrLitContext ctx) {
+	String strlit = ctx.STRING_LITERAL().getText();
+   	return new StrLit(ctx.getStart().getLine(), strlit);
+   }
+
+   @Override
+   public Absyn visitParenExp(gParser.ParenExpContext ctx) {
+   	Exp exp = (Exp) visit(ctx.expr());
+	return exp;
+   }
+
+   @Override
+   public Absyn visitBinOp(gParser.BinOpContext ctx) {
+   	Exp expLeft = (Exp) visit(ctx.expr(0));
+	Exp expRight = (Exp) visit(ctx.expr(1));
+	String op = ctx.op.getText();
+	return new BinOp(ctx.getStart().getLine(), expLeft, op, expRight);
+   }
+
+   @Override
+   public Absyn visitFunExp(gParser.FunExpContext ctx) {
+   	Exp func = (Exp) visit(ctx.expr(0));
+	ExpList args = new ExpList(ctx.getStart().getLine());
+	for (int i = 1; i < ctx.expr().size(); i++) {
+		args.list.add((Exp) visit(ctx.expr(i)));
+	}
+	return new FunExp(ctx.getStart().getLine(), func, args);
+   }
+
+   @Override
+   public Absyn visitArrayExp(gParser.ArrayExpContext ctx) {
+   	Exp array = (Exp) visit(ctx.expr(0));
+	ExpList indexes = new ExpList(ctx.getStart().getLine());
+	for (int i = 1; i < ctx.expr().size(); i++) {
+		indexes.list.add((Exp) visit(ctx.expr(i)));
+	}
+	return new ArrayExp(ctx.getStart().getLine(), array, indexes);
+   }
+
+   @Override
+   public Absyn visitAssignExp(gParser.AssignExpContext ctx) {
+   	Exp left = (Exp) visit(ctx.expr());
+	Exp right = (Exp) visit(ctx.initializer());
+	return new AssignExp(ctx.getStart().getLine(), left, right);
    }
 
 }
