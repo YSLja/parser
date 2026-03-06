@@ -244,5 +244,21 @@ public class ASTBuilder extends gParserBaseVisitor<Absyn> {
       return new BreakStmt(ctx.getStart().getLine());
    }
 
+   @Override
+   public Absyn visitUnary_operator(gParser.Unary_operatorContext ctx) {
+      // unary_operator : BITWISEAND | STAR | ADD | NOT
+      String op;
+      if (ctx.BITWISEAND() != null) {
+         op = "&";
+      } else if (ctx.STAR() != null) {
+         op = "*";
+      } else if (ctx.ADD() != null) {
+         op = "+";
+      } else {
+         op = "!";
+      }
+      return new UnaryOp(ctx.getStart().getLine(), op);
+   }
+
 }
 
