@@ -2,7 +2,8 @@
 
 Authors: Kyle King, Ja Aupart, Sam Vekovius, Benjamin Gutowski
 
-The ANTLR parser reads source code and produces a parse tree from the grammar defined in gParser.g4. The ASTBuilder.java visitor then walks that parse tree, converting each Context node into a corresponding Absyn node. 28 visitor functions were implemented to cover all grammar rules including declarations, statements, and expressions.
+The ANTLR parser reads source code and produces a parse tree from the grammar defined in gParser.g4. The ASTBuilder.java visitor then walks the parse tree, converting each context node into a corresponding Absyn node. 28 visitor functions were implemented to cover all grammar rules.
+
 ---
 
 
